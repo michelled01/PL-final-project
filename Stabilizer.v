@@ -28,7 +28,7 @@ Definition var_eq : forall v1 v2 : var, {v1 = v2} + {v1 <> v2} := string_dec.
 
 *)
 
-Inductive stabilizer_variable := (s: stabilizer) | ± s | ±i * s | (∫: stabilizer_variable)  
+Inductive stabilizer_value := (s: stabilizer) | ± s | ±i * s | (∫: stabilizer_variable)  
 
 (*  by Lemma 4.1 and Proposition 4.2, introduce arith-
 metic expressions of stabilizers  *)
@@ -44,21 +44,43 @@ Inductive Prog :=
     | InitializeToZero (q: qubit)
     | UnitaryTransform (U: ucom) (q: qubit)
     | Seq (p1 p2: Prog)
-    | Case (B: ucom) (q: qubit) (m: measurement_outcome) (body: Prog)
+    | Case (M: observable) (q: qubit) (m: measurement_outcome) (body: Prog)
     | While (B: ucom) (q: qubit) (body: Prog)
 (*Should M be any unitary or only positive hermitian? and is M implicitly applied to the whole state prior to measurement*)
 
 
 (* For operational semantics ∫😊🤩😶‍🌫️🙃😱👽👻🦊🐭🦧🎆🎈🎆🎇✨🎉🎊 *)
 
+Inductive QEC_Condition :=
+    | (M: observable) (∫ : InitializeStabilizer) (q: qubit).
+
 Inductive QECV_Lang := 
     | Skip
     | InitializeToZero (q: qubit)
     | UnitaryTransform (U: ucom) (q: qubit)
-    | InitializeStabilizer (s: stabilizer) (s_e_u: ???)
-    | Seq (p1 p2: Prog)
-    | Case (B: ucom) (q: qubit) (∫ : InitializeStabilizer) (m: measurement_outcome) (body: Prog)
-    | While (B: ucom) (q: qubit) (body: Prog)
+    | InitializeStabilizer (s: stabilizer_var) (s_e_u: stabilizer_value)
+    | Seq (p1 p2: QECV_Lang)
+    | If (condition: QEC_Condition) (cthen: QECV_Lang) (celse: QECV_Lang)
+    | While (condition: QEC_Condition) (body: QECV_Lang)
+
+
+Inductive QECV_Lang : cmd * valuation -> cmd *  valuation :=
+| Skip              : forall ρ σ,
+                    
+| Initialization
+| Unitary
+| Sequence_E
+| Stabilizer_exp
+| Assignment
+| Sequence
+| If_1
+| If
+| While_1
+| While
+
+
+(ρ * σ) := (0, {})
+(*
 Inductive step : valuation * cmd -> valuation * cmd -> Prop :=
 | stepQubitAssign     : forall v x e,
                      step (v, Assign x e) (set_var v x (eval_expr e v), Skip)
