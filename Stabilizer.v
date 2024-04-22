@@ -1,55 +1,69 @@
 Require Import QuantumLib.Quantum.
 Require Import QuantumLib.VectorStates.
+Require Import QuantumLib.Proportional.
 Require Import QuantumLib.GenMatrix.
 Require Export SQIR.UnitarySem.
 Require Import QuantumLib.Matrix.
-
+Require Import String.
 Local Open Scope ucom.
 
 
-Definition qubit (n : nat) :=  Vector (2^n)
+Definition qubit0 : Vector 2 := 
+  fun x y => match x, y with 
+          | 0, 0 => C1
+          | 1, 0 => C0
+          | _, _ => C0
+          end.
+Definition qubit1 : Vector 2 := 
+fun x y => match x, y with 
+        | 0, 0 => C0
+        | 1, 0 => C1
+        | _, _ => C0
+        end.
+Defintion qubit := qubit0 | qubit1.
+
+Definition unitary := base_ucom 2.
 
 Inductive Pauli := I | σx | σy | σz.
 
-Definition stabilizer (n dim: nat) (ψ : Vector (2^n)) (A: Square (2^n)) : Prop :=
-    A × ψ = ψ.
+Definition stabilizer (ψ : qubit) (A: unitary) : Prop :=
+    uc_eval (A) × ψ = ψ.
 
 (* Stabilizer variable s ∈ ⊗^n {I, X, Y, Z} *)
-Definition "∫" := | stabilizer | −stabilizer | i*stabilizer | −i*stabilizer.
+Inductive __stabilizer_integral_type  :=
+  | snek (s: stabilizer)
+  | minus_s (s: stabilizer)
+  | i_s (s: stabilizer)
+  | minus_i_s (s: stabilizer).
+
+Notation "∫" :=  __stabilizer_integral_type.
 (* N.B ∫ is a variable. Like x or y or z. typically, x or y or z denote numbers of some kind
 ∫ denotes some kind of stabilizer gate. We could've called it U or S but the paper chose ∫ ...
 *)
 
-Inductive stabilizer_value := (s: stabilizer) | ± s | ±i * s | (∫: stabilizer_variable)  
+Notation "±" := - | +.
+
+Inductive stabilizer_value := | Plus (s: stabilizer) | Minus (s: stabilizer) | I s | MinusI s | Var (S: stabilizer_variable).
 
 Inductive Prog :=
     | Skip
     | InitializeToZero (q: qubit)
-    | UnitaryTransform (U: ucom) (q: qubit)
+    | UnitaryTransform (U: unitary) (q: qubit)
     | Seq (p1 p2: Prog)
-    | Case (M: observable) (q: qubit) (m: measurement_outcome) (body: Prog)
-    | While (B: ucom) (q: qubit) (body: Prog)
-    
+    | Case (M: unitary) (q: qubit) (m: nat) (body: Prog)
+    | While (B: unitary) (q: qubit) (body: Prog)
+    .
 (*Should M be any unitary or only positive hermitian? and is M implicitly applied to the whole state prior to measurement*)
 
 
 (* For operational semantics ∫😊🤩😶‍🌫️🙃😱👽👻🦊🐭🦧🎆🎈🎆🎇✨🎉🎊 *)
 
 Inductive QEC_Condition :=
-    | (M: observable) (∫ : InitializeStabilizer) (q: qubit).
-
-Inductive QECV_Lang := 
-    | Skip
-    | InitializeToZero (q: qubit)
-    | UnitaryTransform (U: ucom) (q: qubit)
-    | InitializeStabilizer (s: stabilizer_var) (s_e_u: stabilizer_value)
-    | Seq (p1 p2: QECV_Lang)
-    | If (condition: QEC_Condition) (cthen: QECV_Lang) (celse: QECV_Lang)
-    | While (condition: QEC_Condition) (body: QECV_Lang)
+    | condition (M: unitary) (∫ : InitializeStabilizer) (q: qubit).
 
 Definition stabilizer_var := string.
 
-Definition stabilizer_eq : forall (v1 v2 : var), {v1 = v2} + {v1 <> v2} := string_dec.
+Definition stabilizer_eq : forall (v1 v2 : stabilizer_var), {v1 = v2} + {v1 <> v2} := string_dec.
 
 Definition stabilizer_map := list (stabilizer_var * stabilizer_value).
 
@@ -57,6 +71,7 @@ Definition empty_stabilizer_map: stabilizer_map := nil.
 
 Definition set_stabilizer (s: stabilizer_var) (v: stabilizer_value) (m: stabilizer_map): stabilizer_map :=
     cons (s, v) m
+.
 
 Definition lookup_stabilizer (s: stabilizer_var) (m: stabilizer_map): option stabilizer_value :=
     match m with
@@ -69,8 +84,19 @@ Definition lookup_stabilizer (s: stabilizer_var) (m: stabilizer_map): option sta
 
 Definition qubit_eq : forall (v1 v2 : qubit), {v1 = v2} + {v1 <> v2} := string_dec.
 
-Notation E := (0, {})
-Notation c := 1 | -1 | i | -i
+
+Inductive QECV_Lang := 
+    | Skip
+    | InitializeToZero (q: qubit)
+    | UnitaryTransform (U: unitary) (q: qubit)
+    | InitializeStabilizer (s: stabilizer_var) (s_e_u: stabilizer_value)
+    | Seq (p1 p2: QECV_Lang)
+    | If (condition: QEC_Condition) (cthen: QECV_Lang) (celse: QECV_Lang)
+    | While (condition: QEC_Condition) (body: QECV_Lang)
+    .
+
+Notation E := (0, {}).
+Notation c := 1 | -1 | i | -.
 
 Inductive stabilizer_expr :=
 | StabilizerConst stabilizer_value
