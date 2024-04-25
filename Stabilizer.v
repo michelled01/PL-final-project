@@ -118,8 +118,7 @@ Definition stabilizer_var_to_unitary (var: stabilizer_var) (m: stabilizer_map): 
 Inductive step : QECV_Lang * (qubit_state * stabilizer_map) -> QECV_Lang * (qubit_state * stabilizer_map) -> Prop :=
 | Initialization    : forall q ρ σ,
                       step (InitializeToZero q, (ρ, σ)) (Skip,
-                      (* (∣0⟩⟨0∣×ρ×∣0⟩⟨0∣ + ∣0⟩⟨1∣×ρ×∣1⟩⟨0∣, *)
-                      (ρ,
+                      (Mplus (Mmult (Mmult ∣0⟩⟨0∣ ρ) ∣0⟩⟨0∣) (Mmult (Mmult ∣0⟩⟨1∣ ρ) ∣1⟩⟨0∣),
                       σ))
 | Unitary           : forall U ρ σ,
                       step (UnitaryTransform U, (ρ, σ)) (Skip, (Mmult (uc_eval U) (Mmult ρ ((uc_eval U) †)), σ))
